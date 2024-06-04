@@ -15,6 +15,6 @@
 - A **Python Version** of **3.8** or higher is required for the wrapper and is tested on **Windows 10 (64-bit)**.
 - To install the **ifxradarsdk**, it is advisable to do it in a virtual environment.
 
-		 `python  -m  pip  install  /path/to/ifxradarsdk.whl`
+		 python  -m  pip  install  /path/to/ifxradarsdk.whl
 - pip installing **numpy** is an added advantage.
 
