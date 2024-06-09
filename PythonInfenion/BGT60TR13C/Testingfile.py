@@ -44,7 +44,6 @@ def run_script3():
 
         ## plot of the heatmap
 
-
 ##--------------------------------------------------------------------------------------------------------------------------
 
     ##running processess's as subprocessess's for threads and futures
