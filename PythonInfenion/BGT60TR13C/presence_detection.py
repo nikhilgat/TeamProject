@@ -33,7 +33,7 @@ from scipy import signal
 from ifxradarsdk import get_version_full
 from ifxradarsdk.fmcw import DeviceFmcw
 from ifxradarsdk.fmcw.types import FmcwSimpleSequenceConfig, FmcwSequenceChirp
-from helpers.fft_spectrum import *
+from fft_spectrum import *
 
 
 class PresenceAntiPeekingAlgo:
@@ -174,7 +174,10 @@ if __name__ == "__main__":
 
             # matrix of dimension num_chirps_per_frame x num_samples_per_chirp for RX1
             mat = frame[0, :, :]
+            
             presence_status, peeking_status = algo.presence(mat)
 
             print(f" Presence: {presence_status}")
             print(f"       Peeking: {peeking_status}")
+
+
