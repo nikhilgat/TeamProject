@@ -68,7 +68,7 @@ class PresenceAntiPeekingAlgo:
         self.first_run = True
 
         # Use Blackmann-Harris as window function
-        self.window = signal.blackmanharris(num_samples_per_chirp).reshape(1, num_samples_per_chirp)
+        self.window = signal.windows.blackmanharris(num_samples_per_chirp).reshape(1, num_samples_per_chirp)
 
     def presence(self, mat):
         """Run the presence and anti-peeking algorithm on the current frame.

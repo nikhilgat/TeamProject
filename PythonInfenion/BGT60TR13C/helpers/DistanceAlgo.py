@@ -30,7 +30,7 @@ import numpy as np
 from scipy import signal, constants
 
 from ifxradarsdk.fmcw.types import FmcwSequenceChirp
-from helpers.fft_spectrum import *
+from fft_spectrum import *
 
 
 class DistanceAlgo:
@@ -40,7 +40,7 @@ class DistanceAlgo:
         self.num_chirps_per_frame = num_chirps_per_frame
 
         # compute Blackman-Harris Window matrix over chirp samples(range)
-        self.range_window = signal.blackmanharris(chirp.num_samples).reshape(1, chirp.num_samples)
+        self.range_window = signal.windows.blackmanharris(chirp.num_samples).reshape(1, chirp.num_samples)
 
         bandwidth_hz = abs(chirp.end_frequency_Hz - chirp.start_frequency_Hz)
         fft_size = chirp.num_samples * 2

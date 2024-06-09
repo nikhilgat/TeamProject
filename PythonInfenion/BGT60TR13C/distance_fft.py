@@ -28,7 +28,7 @@
 
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
 from ifxradarsdk import get_version_full
 from ifxradarsdk.fmcw import DeviceFmcw
