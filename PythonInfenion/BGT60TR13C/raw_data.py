@@ -42,8 +42,6 @@ with DeviceFmcw() as device:
     print("UUID of board: " + device.get_board_uuid())
     print("Sensor: " + str(device.get_sensor_type()))
     
-    print("testprint" + metri)
-
     # A device instance is initialised with the default acquisition
     # sequence for its corresponding radar sensor. This sequence can be
     # simply fetched, analysed or modified by the user.
