@@ -76,7 +76,7 @@ def run_script3():
         
 ##--------------------------------------------------------------------------------------------------------------------------
       
-        ##futures
+        ##concurrent.future
         
 ##--------------------------------------------------------------------------------------------------------------------------
 
@@ -110,16 +110,26 @@ root.title("RADAR GUI")
 ## basic impl
 
 ##--------------------------------------------------------------------------------------------------------------------------
+root.geometry("300x300")
 
+button_style = {
+    "font": ("Helvetica", 12, "bold"),
+    "background": "#4CAF50",
+    "foreground": "white",
+    "borderwidth": 2,
+    "relief": "raised",
+    "width": 20,
+    "height": 2
+}
 
-button1 = tk.Button(root, text="Execute Script 1", command=run_script1)
-button1.pack(pady=10)
+button1 = tk.Button(root, text="Script 1", command=run_script1, **button_style)
+button1.pack(pady=20)
 
-button2 = tk.Button(root, text="Execute Script 2", command=run_script2)
-button2.pack(pady=10)
+button2 = tk.Button(root, text="Script 2", command=run_script2, **button_style)
+button2.pack(pady=20)
 
-button3 = tk.Button(root, text="Execute Script 3", command=run_script3)
-button3.pack(pady=10)
+button3 = tk.Button(root, text="Script 3", command=run_script3, **button_style)
+button3.pack(pady=20)
 
 # Run the main loop
 root.mainloop()

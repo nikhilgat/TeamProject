@@ -1,125 +1,77 @@
-import tkinter as tk
-from tkinter import messagebox
-import subprocess
-import sys
-import os
-import threading
-import concurrent.futures
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from range_angle_map import *
+# ===========================================================================
+# Copyright (C) 2022 Infineon Technologies AG
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ===========================================================================
 
+import pprint
+import numpy as np
+from ifxradarsdk import get_version
+from ifxradarsdk.fmcw import DeviceFmcw
+from ifxradarsdk.fmcw.types import create_dict_from_sequence
+from ifxradarsdk.fmcw import *
+from range_angle_map import LivePlot
 
-script_dir = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C'  #my path, change with your path
-os.chdir(script_dir)
+# open device: The device will be closed at the end of the block. Instead of
+# the with-block you can also use:
+#   device = DeviceFmcw()
+# However, the with block gives you better control when the device is closed.
 
-##--------------------------------------------------------------------------------------------------------------------------
+with DeviceFmcw() as device:
+    print("Radar SDK Version: " + get_version())
+    print("UUID of board: " + device.get_board_uuid())
+    print("Sensor: " + str(device.get_sensor_type()))
+    print("this is temp " + str(device.get_temperature()))
+    print(device )
+    
+    metrics = device.metrics_from_sequence()
+    pprint.pprint(metrics)
 
-## basic impl
+        # get maximum range
+    max_range_m = metrics.max_range_m
+    # A device instance is initialised with the default acquisition
+    # sequence for its corresponding radar sensor. This sequence can be
+    # simply fetched, analysed or modified by the user.
+    first_element = device.get_acquisition_sequence()
 
-##--------------------------------------------------------------------------------------------------------------------------
+    # Print the current device acquisition sequence
+    sequence = create_dict_from_sequence(first_element)
+    pp = pprint.PrettyPrinter()
+    pp.pprint(sequence)
 
-def run_script1():
-    try:
-        subprocess.run([sys.executable, 'raw_data.py'], check=True)
-        messagebox.showinfo("Success", "Script 1 executed successfully!")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Script 1 failed: {e}")
+    # Fetch a number of frames
+    for frame_number in range(2):
+        frame_contents = device.get_next_frame()
 
-def run_script2():
-    try:
-        subprocess.run([sys.executable, 'range_angle_map.py'], check=True)
-        messagebox.showinfo("Success", "Script 2 executed successfully!")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Script 2 failed: {e}")
+        for frame in frame_contents:
+            num_rx = np.shape(frame)[0]
 
-def run_script3():
-    try:
-        subprocess.run([sys.executable, 'presence_detection.py'], check=True)
-        messagebox.showinfo("Success", "Script 3 executed successfully!")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Script 3 failed: {e}")
-        
-##--------------------------------------------------------------------------------------------------------------------------
+            # Do some processing with the obtained frame.
+            # In this example we just dump it into the console
+            print("Frame " + format(frame_number) + ", num_antennas={}".format(num_rx))
 
-        ## plot of the heatmap
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-    ##running processess's as subprocessess's for threads and futures
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-# def run_script(script_name):
-#     try:
-#         subprocess.run([sys.executable, script_name], check=True)
-#         messagebox.showinfo("Success", f"{script_name} executed successfully!")
-#     except subprocess.CalledProcessError as e:
-#         messagebox.showerror("Error", f"{script_name} failed: {e}")
-
-##--------------------------------------------------------------------------------------------------------------------------
-     
-        ##mutlithreading
- 
-##--------------------------------------------------------------------------------------------------------------------------
-       
-# def run_scripts_concurrently():
-#     scripts = ['presence_detection.py', 'range_angle_map.py']  
-#     threads = []
-#     for script in scripts:
-#         thread = threading.Thread(target=run_script, args=(script,))
-#         thread.start()
-#         threads.append(thread)
-
-#     for thread in threads:
-#         thread.join()
-        
-##--------------------------------------------------------------------------------------------------------------------------
-      
-        ##futures
-        
-##--------------------------------------------------------------------------------------------------------------------------
-
-# def run_scripts_concurrently():
-#     scripts = ['presence_detection.py', 'range_angle_map.py']  
-#     with concurrent.futures.ThreadPoolExecutor() as executor:
-#         futures = [executor.submit(run_script, script) for script in scripts]
-#         for future in concurrent.futures.as_completed(futures):
-#             try:
-#                 future.result()
-#             except Exception as e:
-#                 print(f"Script failed: {e}")
-        ##basic imnplementation
-        
-        
-##--------------------------------------------------------------------------------------------------------------------------
-
-
-# Create the main window
-root = tk.Tk()
-root.title("RADAR GUI")
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-## multithreading
-# button = tk.Button(root, text="Execute Script", command=run_scripts_concurrently)
-# button.pack(pady=10)
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-## basic impl
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-
-button1 = tk.Button(root, text="Execute Script 1", command=run_script1)
-button1.pack(pady=10)
-
-button2 = tk.Button(root, text="Execute Script 2", command=run_script2)
-button2.pack(pady=10)
-
-button3 = tk.Button(root, text="Execute Script 3", command=run_script3)
-button3.pack(pady=10)
-
-# Run the main loop
-root.mainloop()
+            for iAnt in range(num_rx):
+                mat = frame[iAnt, :, :]
+                print("Antenna", iAnt, "\n", mat)

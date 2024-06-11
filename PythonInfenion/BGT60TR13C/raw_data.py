@@ -31,6 +31,7 @@ import numpy as np
 from ifxradarsdk import get_version
 from ifxradarsdk.fmcw import DeviceFmcw
 from ifxradarsdk.fmcw.types import create_dict_from_sequence
+from ifxradarsdk.fmcw import *
 
 # open device: The device will be closed at the end of the block. Instead of
 # the with-block you can also use:
@@ -40,6 +41,8 @@ with DeviceFmcw() as device:
     print("Radar SDK Version: " + get_version())
     print("UUID of board: " + device.get_board_uuid())
     print("Sensor: " + str(device.get_sensor_type()))
+    
+    print("testprint" + metri)
 
     # A device instance is initialised with the default acquisition
     # sequence for its corresponding radar sensor. This sequence can be
