@@ -3,8 +3,8 @@ from tkinter import messagebox
 import subprocess
 import sys
 import os
-import threading
-import concurrent.futures
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from range_angle_map import *
@@ -12,6 +12,19 @@ from range_angle_map import *
 
 script_dir = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C'  #my path, change with your path
 os.chdir(script_dir)
+
+
+class ReloadHandler(FileSystemEventHandler):
+    def __init__(self, root):
+        self.root = root
+
+    def on_modified(self, event):
+        if event.src_path == os.path.abspath(__file__):
+            self.reload_app()
+
+    def reload_app(self):
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
 
 ##--------------------------------------------------------------------------------------------------------------------------
 
@@ -110,7 +123,24 @@ root.title("RADAR GUI")
 ## basic impl
 
 ##--------------------------------------------------------------------------------------------------------------------------
-root.geometry("300x300")
+
+##------------------------------------------------------------------------------------------------
+
+    ## GUI impl
+    
+##------------------------------------------------------------------------------------------------
+
+def GUI():
+    root = tk.Tk()
+    root.geometry("1200x1080")
+    root.attributes('-fullscreen', True)
+    return root
+
+
+def exit_fullscreen(event=None):
+    root.attributes('-fullscreen', False)
+
+root.bind('<Escape>', exit_fullscreen)
 
 button_style = {
     "font": ("Helvetica", 12, "bold"),
@@ -121,6 +151,20 @@ button_style = {
     "width": 20,
     "height": 2
 }
+
+
+if __name__ == "__main__":
+    root = GUI()
+    event_handler = ReloadHandler(root)
+    observer = Observer()
+    observer.schedule(event_handler, path=os.path.dirname(os.path.abspath(__file__)), recursive=False)
+    observer.start()
+
+try:
+    root.mainloop()
+except KeyboardInterrupt:
+    observer.stop()
+    observer.join
 
 button1 = tk.Button(root, text="Script 1", command=run_script1, **button_style)
 button1.pack(pady=20)
