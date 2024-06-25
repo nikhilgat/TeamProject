@@ -4,20 +4,14 @@ import subprocess
 import sys
 import os
 import threading
-import concurrent.futures
-from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from range_angle_map import *
+from range_angle_map import run_range_angle_map
 
-
-script_dir = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C'  #my path, change with your path
+script_dir = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C'  # Change with your path
 os.chdir(script_dir)
 
-##--------------------------------------------------------------------------------------------------------------------------
-
-## basic impl
-
-##--------------------------------------------------------------------------------------------------------------------------
+stop_event = threading.Event()
 
 def run_script1():
     try:
@@ -27,94 +21,55 @@ def run_script1():
         messagebox.showerror("Error", f"Script 1 failed: {e}")
 
 def run_script2():
-    try:
-        subprocess.run([sys.executable, 'range_angle_map.py'], check=True)
-        messagebox.showinfo("Success", "Script 2 executed successfully!")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Script 2 failed: {e}")
+    stop_event.clear()
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+    def thread_target():
+        run_range_angle_map(fig, ax)
+
+    threading.Thread(target=thread_target).start()
 
 def run_script3():
-    try:
-        subprocess.run([sys.executable, 'presence_detection.py'], check=True)
-        messagebox.showinfo("Success", "Script 3 executed successfully!")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Script 3 failed: {e}")
-        
-##--------------------------------------------------------------------------------------------------------------------------
+    stop_event.clear()
+    threading.Thread(target=run_presence_detection).start()
 
-        ## plot of the heatmap
+def run_presence_detection():
+    presence_script = os.path.join(script_dir, 'presence_detection.py')
+    process = subprocess.Popen([sys.executable, presence_script], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    for line in process.stdout:
+        if stop_event.is_set():
+            process.terminate()
+            break
+        if ',' in line:
+            presence_status, peeking_status = line.strip().split(',')
+            presence_status = presence_status == 'True'
+            peeking_status = peeking_status == 'True'
+            gui.update_labels(presence_status, peeking_status)
+    
+    process.stdout.close()
+    process.stderr.close()
+    process.wait()
 
-##--------------------------------------------------------------------------------------------------------------------------
+def stop_script():
+    stop_event.set()
+    messagebox.showinfo("Info", "Stop signal sent!")
 
-    ##running processess's as subprocessess's for threads and futures
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-# def run_script(script_name):
-#     try:
-#         subprocess.run([sys.executable, script_name], check=True)
-#         messagebox.showinfo("Success", f"{script_name} executed successfully!")
-#     except subprocess.CalledProcessError as e:
-#         messagebox.showerror("Error", f"{script_name} failed: {e}")
-
-##--------------------------------------------------------------------------------------------------------------------------
-     
-        ##mutlithreading
- 
-##--------------------------------------------------------------------------------------------------------------------------
-       
-# def run_scripts_concurrently():
-#     scripts = ['presence_detection.py', 'range_angle_map.py']  
-#     threads = []
-#     for script in scripts:
-#         thread = threading.Thread(target=run_script, args=(script,))
-#         thread.start()
-#         threads.append(thread)
-
-#     for thread in threads:
-#         thread.join()
-        
-##--------------------------------------------------------------------------------------------------------------------------
-      
-        ##concurrent.future
-        
-##--------------------------------------------------------------------------------------------------------------------------
-
-# def run_scripts_concurrently():
-#     scripts = ['presence_detection.py', 'range_angle_map.py']  
-#     with concurrent.futures.ThreadPoolExecutor() as executor:
-#         futures = [executor.submit(run_script, script) for script in scripts]
-#         for future in concurrent.futures.as_completed(futures):
-#             try:
-#                 future.result()
-#             except Exception as e:
-#                 print(f"Script failed: {e}")
-        ##basic imnplementation
-        
-        
-##--------------------------------------------------------------------------------------------------------------------------
-
-
-# Create the main window
 root = tk.Tk()
 root.title("RADAR GUI")
+root.geometry("1000x700")
+root.configure(background='#2c3e50')
 
-##--------------------------------------------------------------------------------------------------------------------------
+def exit_fullscreen(event=None):
+    root.attributes('-fullscreen', False)
 
-## multithreading
-# button = tk.Button(root, text="Execute Script", command=run_scripts_concurrently)
-# button.pack(pady=10)
-
-##--------------------------------------------------------------------------------------------------------------------------
-
-## basic impl
-
-##--------------------------------------------------------------------------------------------------------------------------
-root.geometry("300x300")
+root.bind('<Escape>', exit_fullscreen)
 
 button_style = {
     "font": ("Helvetica", 12, "bold"),
-    "background": "#4CAF50",
+    "background": "#3498db",
     "foreground": "white",
     "borderwidth": 2,
     "relief": "raised",
@@ -122,14 +77,39 @@ button_style = {
     "height": 2
 }
 
-button1 = tk.Button(root, text="Script 1", command=run_script1, **button_style)
-button1.pack(pady=20)
+top_frame = tk.Frame(root, background='#2c3e50')
+top_frame.pack(side=tk.TOP, fill=tk.X, pady=20)
 
-button2 = tk.Button(root, text="Script 2", command=run_script2, **button_style)
-button2.pack(pady=20)
+button1 = tk.Button(top_frame, text="Script 1", command=run_script1, **button_style)
+button1.pack(side=tk.LEFT, padx=20)
 
-button3 = tk.Button(root, text="Script 3", command=run_script3, **button_style)
-button3.pack(pady=20)
+button2 = tk.Button(top_frame, text="Script 2", command=run_script2, **button_style)
+button2.pack(side=tk.LEFT, padx=20)
 
-# Run the main loop
+button3 = tk.Button(top_frame, text="Script 3", command=run_script3, **button_style)
+button3.pack(side=tk.LEFT, padx=20)
+
+stop_button = tk.Button(top_frame, text="Stop Script", command=stop_script, **button_style)
+stop_button.pack(side=tk.LEFT, padx=20)
+
+plot_frame = tk.Frame(root, background='#ecf0f1', bd=2, relief="sunken")
+plot_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1, padx=20, pady=20)
+
+label_presence = tk.Label(root, text="Presence: Not Detected", font=("Helvetica", 16), background='#2c3e50', foreground='white')
+label_presence.pack(pady=10)
+label_peeking = tk.Label(root, text="Peeking: Not Detected", font=("Helvetica", 16), background='#2c3e50', foreground='white')
+label_peeking.pack(pady=10)
+
+class RadarGUI:
+    def __init__(self, root):
+        self.label_presence = label_presence
+        self.label_peeking = label_peeking
+
+    def update_labels(self, presence_status, peeking_status):
+        self.label_presence.config(text=f"Presence: {'Detected' if presence_status else 'Not Detected'}")
+        self.label_peeking.config(text=f"Peeking: {'Detected' if peeking_status else 'Not Detected'}")
+        root.update_idletasks()
+
+gui = RadarGUI(root)
+
 root.mainloop()

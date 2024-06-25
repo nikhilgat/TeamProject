@@ -19,20 +19,24 @@ def num_rx_antennas_from_rx_mask(rx_mask):
 
 
 class LivePlot:
-    def __init__(self, max_angle_degrees: float, max_range_m: float):
+    def __init__(self, max_angle_degrees: float, max_range_m: float, fig=None, ax=None):
         # max_angle_degrees: maximum supported speed
         # max_range_m:   maximum supported range
         self.h = None
         self.max_angle_degrees = max_angle_degrees
         self.max_range_m = max_range_m
 
-        plt.ion()
+        self._fig = fig
+        self._ax = ax
 
-        self._fig, self._ax = plt.subplots(nrows=1, ncols=1)
-
-        self._fig.canvas.manager.set_window_title("Range-Angle-Map using Digital Beam Forming")
-        self._fig.canvas.mpl_connect('close_event', self.close)
-        self._is_window_open = True
+        if self._fig is None or self._ax is None:
+            plt.ion()
+            self._fig, self._ax = plt.subplots(nrows=1, ncols=1)
+            self._fig.canvas.manager.set_window_title("Range-Angle-Map using Digital Beam Forming")
+            self._fig.canvas.mpl_connect('close_event', self.close)
+            self._is_window_open = True
+        else:
+            self._is_window_open = True
 
     def _draw_first_time(self, data: np.ndarray):
         # First time draw
@@ -86,11 +90,8 @@ class LivePlot:
     def is_closed(self):
         return not self._is_window_open
 
-# -------------------------------------------------
-# Main logic
-# -------------------------------------------------
 
-if __name__ == '__main__':
+def run_range_angle_map(fig, ax):
     num_beams = 27  # number of beams
     max_angle_degrees = 40  # maximum angle, angle ranges from -40 to +40 degrees
 
@@ -137,7 +138,7 @@ if __name__ == '__main__':
         # Create objects for Range-Doppler, Digital Beam Forming, and plotting.
         doppler = DopplerAlgo(config.chirp.num_samples, config.num_chirps, num_rx_antennas)
         dbf = DigitalBeamForming(num_rx_antennas, num_beams=num_beams, max_angle_degrees=max_angle_degrees)
-        plot = LivePlot(max_angle_degrees, max_range_m)
+        plot = LivePlot(max_angle_degrees, max_range_m, fig, ax)
 
         while not plot.is_closed():
             # frame has dimension num_rx_antennas x num_chirps_per_frame x num_samples_per_chirp
@@ -157,6 +158,7 @@ if __name__ == '__main__':
                 rd_spectrum[:, :, i_ant] = dfft_dbfs
 
             # Compute Range-Angle map
+            # processes the Doppler spectrum
             rd_beam_formed = dbf.run(rd_spectrum)
             for i_beam in range(num_beams):
                 doppler_i = rd_beam_formed[:, :, i_beam]
