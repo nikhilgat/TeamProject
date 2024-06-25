@@ -6,6 +6,7 @@ import os
 import threading
 from PIL import Image, ImageTk
 import PIL
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from range_angle_map import run_range_angle_map
 
