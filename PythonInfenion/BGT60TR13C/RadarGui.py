@@ -22,8 +22,7 @@ def run_script1():
     
 def run_script2():
     stop_event.clear()
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+    canvas = FigureCanvasTkAgg( master=plot_frame)
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     def thread_target():

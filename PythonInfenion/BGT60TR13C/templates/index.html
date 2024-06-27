@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RADAR GUI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RADAR GUI</h1>
+        </header>
+        <div class="button-container">
+            <button onclick="runScript('run_script1')">Script 1</button>
+            <button onclick="runScript('run_script2')">Script 2</button>
+            <button onclick="runScript('run_script3')">Script 3</button>
+            <button onclick="runScript('stop_script')">Stop Script</button>
+        </div>
+        <div id="message" class="message"></div>
+        <div id="plot-container" class="plot-container">
+            <img id="plot" src="" alt="Live Plot">
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

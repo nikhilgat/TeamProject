@@ -30,7 +30,7 @@ class LivePlot:
         # Load and set custom background image
         self.set_background_image(image_path)
         
-        plt.show(block=False)
+        #plt.show(block=False)
 
     def set_background_image(self, image_path):
         # Load and flip image
@@ -72,8 +72,8 @@ class LivePlot:
 def presence_map():
     num_beams = 27
     max_angle_degrees = 40
-    image_path = '/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/bkg.jpg' 
-    marker_path = '/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/vect.png'
+    image_path = '/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/assets/bkg.jpg' 
+    marker_path = '/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/assets/vect.png'
     
     config = FmcwSimpleSequenceConfig(
         frame_repetition_time_s=0.5,
