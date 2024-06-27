@@ -59,7 +59,7 @@ class LivePlot:
         self._ax.set_aspect("auto")
 
         self._fig.subplots_adjust(right=0.8)
-        cbar_ax = self._fig.add_axes([0.85, 0.0, 0.03, 1])
+        cbar_ax = self._fig.add_axes([0.85, 0.0, 0.03, 0.1])
 
         cbar = self._fig.colorbar(self.h, cax=cbar_ax)
         cbar.ax.set_ylabel("magnitude (a.u.)")
@@ -93,7 +93,7 @@ class LivePlot:
 
 def run_range_angle_map(fig, ax):
     num_beams = 27  # number of beams
-    max_angle_degrees = 40  # maximum angle, angle ranges from -40 to +40 degrees
+    max_angle_degrees = 80  # maximum angle, angle ranges from -40 to +40 degrees
 
     config = FmcwSimpleSequenceConfig(
         frame_repetition_time_s=0.15,  # Frame repetition time 0.15s (frame rate of 6.667Hz)

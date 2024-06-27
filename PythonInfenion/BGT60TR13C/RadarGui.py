@@ -6,7 +6,7 @@ import os
 import threading
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from range_angle_map import run_range_angle_map
+from Testingfile import presence_map
 
 script_dir = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C'  # Change with your path
 os.chdir(script_dir)
@@ -19,7 +19,7 @@ def run_script1():
         messagebox.showinfo("Success", "Script 1 executed successfully!")
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Error", f"Script 1 failed: {e}")
-
+    
 def run_script2():
     stop_event.clear()
     fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -27,7 +27,7 @@ def run_script2():
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     def thread_target():
-        run_range_angle_map(fig, ax)
+        presence_map()
 
     threading.Thread(target=thread_target).start()
 

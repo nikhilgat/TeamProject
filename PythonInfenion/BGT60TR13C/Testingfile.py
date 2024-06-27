@@ -1,141 +1,151 @@
-import tkinter as tk
-from tkinter import messagebox
-import subprocess
-import sys
-import os
-import threading
-from PIL import Image, ImageTk
-import PIL
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from range_angle_map import run_range_angle_map
+from aifc import Error
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.image import imread
+from ifxradarsdk import get_version_full
+from ifxradarsdk.fmcw import DeviceFmcw
+from ifxradarsdk.fmcw.types import FmcwSimpleSequenceConfig, FmcwSequenceChirp
+from helpers.DigitalBeamForming import DigitalBeamForming
+from helpers.DopplerAlgo import DopplerAlgo
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
-script_dir = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C'  # Change with your path
-os.chdir(script_dir)
+class LivePlot:
+    def __init__(self, max_angle_degrees: float, max_range_m: float, image_path: str, marker_path: str):
+        self.max_angle_degrees = max_angle_degrees
+        self.max_range_m = max_range_m
+        self.scatter = None
+        self.marker_image = imread(marker_path)
 
-stop_event = threading.Event()
+        plt.ion()
+        self._fig, self._ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 8))
+        self._fig.canvas.manager.set_window_title("Range-Angle Detection")
+        self._fig.canvas.mpl_connect('close_event', self.close)
+        
+        self._is_window_open = True
+        self._ax.set_xlim(-self.max_angle_degrees, self.max_angle_degrees)
+        self._ax.set_ylim(0, self.max_range_m)
+        self._ax.axis('off')  # Hide axis
+        self._fig.tight_layout()
+        
+        # Load and set custom background image
+        self.set_background_image(image_path)
+        
+        plt.show(block=False)
 
-def run_script1():
-    try:
-        subprocess.run([sys.executable, 'raw_data.py'], check=True)
-        messagebox.showinfo("Success", "Script 1 executed successfully!")
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror("Error", f"Script 1 failed: {e}")
+    def set_background_image(self, image_path):
+        # Load and flip image
+        img = imread(image_path)
+        #img_flipped = np.flipud(img)  # Flip the image vertically
+        
+        # Display flipped image behind plot
+        self._ax.imshow(img, extent=[-self.max_angle_degrees, self.max_angle_degrees, 0, self.max_range_m],
+                        aspect='auto', alpha=0.5)  # Adjust alpha as needed
+        
+        # Adjust plot limits to fit image
+        self._ax.set_xlim(-self.max_angle_degrees, self.max_angle_degrees)
+        self._ax.set_ylim(0, self.max_range_m)
+        
+        self._fig.canvas.draw()
 
-def run_script2():
-    stop_event.clear()
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    canvas = FigureCanvasTkAgg(fig, master=plot_frame)
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    def draw(self, angle: float, distance: float):
+        if self._is_window_open:
+            if self.scatter:
+                self.scatter.remove()
 
-    def thread_target():
-        run_range_angle_map(fig, ax)
+            imagebox = OffsetImage(self.marker_image, zoom=0.05)  
+            ab = AnnotationBbox(imagebox, (angle, self.max_range_m - distance), frameon=False)  
+            self.scatter = self._ax.add_artist(ab)
 
-    threading.Thread(target=thread_target).start()
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events()
 
-def run_script3():
-    stop_event.clear()
-    threading.Thread(target=run_presence_detection).start()
+    def close(self, event=None):
+        if not self.is_closed():
+            self._is_window_open = False
+            plt.close(self._fig)
+            plt.close('all')
+            print('Application closed!')
 
-def run_presence_detection():
-    presence_script = os.path.join(script_dir, 'presence_detection.py')
-    process = subprocess.Popen([sys.executable, presence_script], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    def is_closed(self):
+        return not self._is_window_open
+
+def presence_map():
+    num_beams = 27
+    max_angle_degrees = 40
+    image_path = '/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/bkg.jpg' 
+    marker_path = '/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/vect.png'
     
-    for line in process.stdout:
-        if stop_event.is_set():
-            process.terminate()
-            break
-        if ',' in line:
-            presence_status, peeking_status = line.strip().split(',')
-            presence_status = presence_status == 'True'
-            peeking_status = peeking_status == 'True'
-            gui.update_labels(presence_status, peeking_status)
-            gui.update_icons(presence_status, peeking_status)
-    
-    process.stdout.close()
-    process.stderr.close()
-    process.wait()
+    config = FmcwSimpleSequenceConfig(
+        frame_repetition_time_s=0.5,
+        chirp_repetition_time_s=0.001,
+        num_chirps=64,
+        tdm_mimo=False,
+        chirp=FmcwSequenceChirp(
+            start_frequency_Hz=60e9,
+            end_frequency_Hz=61.5e9,
+            sample_rate_Hz=1e6,
+            num_samples=64,
+            rx_mask=5,
+            tx_mask=1,
+            tx_power_level=31,
+            lp_cutoff_Hz=500000,
+            hp_cutoff_Hz=80000,
+            if_gain_dB=33,
+        )
+    )
 
-def stop_script():
-    stop_event.set()
-    messagebox.showinfo("Info", "Stop signal sent!")
+    with DeviceFmcw() as device:
+        print(f"Radar SDK Version: {get_version_full()}")
+        print("Sensor: " + str(device.get_sensor_type()))
 
-root = tk.Tk()
-root.title("RADAR GUI")
-root.geometry("1000x700")
-root.configure(background='#2c3e50')
+        sequence = device.create_simple_sequence(config)
+        device.set_acquisition_sequence(sequence)
 
-def exit_fullscreen(event=None):
-    root.attributes('-fullscreen', False)
+        chirp_loop = sequence.loop.sub_sequence.contents
+        metrics = device.metrics_from_sequence(chirp_loop)
+        max_range_m = metrics.max_range_m
+        print("Maximum range:", max_range_m)
 
-root.bind('<Escape>', exit_fullscreen)
+        chirp = chirp_loop.loop.sub_sequence.contents.chirp
+        num_rx_antennas = bin(chirp.rx_mask).count('1')
 
-button_style = {
-    "font": ("Helvetica", 12, "bold"),
-    "background": "#3498db",
-    "foreground": "white",
-    "borderwidth": 2,
-    "relief": "raised",
-    "width": 20,
-    "height": 2
-}
+        doppler = DopplerAlgo(config.chirp.num_samples, config.num_chirps, num_rx_antennas)
+        dbf = DigitalBeamForming(num_rx_antennas, num_beams=num_beams, max_angle_degrees=max_angle_degrees)
+        plot = LivePlot(max_angle_degrees, max_range_m, image_path, marker_path)
 
-top_frame = tk.Frame(root, background='#2c3e50')
-top_frame.pack(side=tk.TOP, fill=tk.X, pady=20)
+        while not plot.is_closed():
+            try:
+                frame_contents = device.get_next_frame()
+                frame = frame_contents[0]
 
-button1 = tk.Button(top_frame, text="Script 1", command=run_script1, **button_style)
-button1.pack(side=tk.LEFT, padx=20)
+                rd_spectrum = np.zeros((config.chirp.num_samples, 2 * config.num_chirps, num_rx_antennas), dtype=complex)
+                beam_range_energy = np.zeros((config.chirp.num_samples, num_beams))
 
-button2 = tk.Button(top_frame, text="Script 2", command=run_script2, **button_style)
-button2.pack(side=tk.LEFT, padx=20)
+                for i_ant in range(num_rx_antennas):
+                    mat = frame[i_ant, :, :]
+                    dfft_dbfs = doppler.compute_doppler_map(mat, i_ant)
+                    rd_spectrum[:, :, i_ant] = dfft_dbfs
 
-button3 = tk.Button(top_frame, text="Script 3", command=run_script3, **button_style)
-button3.pack(side=tk.LEFT, padx=20)
+                rd_beam_formed = dbf.run(rd_spectrum)
+                for i_beam in range(num_beams):
+                    doppler_i = rd_beam_formed[:, :, i_beam]
+                    beam_range_energy[:, i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
 
-stop_button = tk.Button(top_frame, text="Stop Script", command=stop_script, **button_style)
-stop_button.pack(side=tk.LEFT, padx=20)
+                max_row, max_col = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
+                angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[max_col]
+                range_m = (max_row / config.chirp.num_samples) * max_range_m
 
-plot_frame = tk.Frame(root, background='#ecf0f1', bd=2, relief="sunken")
-plot_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1, padx=20, pady=20)
+                plot.draw(angle_degrees, range_m)
 
-# Load initial images and resize
-presence_image = Image.open(os.path.join(script_dir, 'pik.jpg')).resize((30, 30), PIL.Image.Resampling.LANCZOS)
-presence_icon = ImageTk.PhotoImage(presence_image)
+            except Error as e:
+                if e.code == Error.FRAME_ACQUISITION_FAILED:
+                    print("Frame dropped. Continuing...")
+                    continue
+                else:
+                    print(f"Error occurred: {e}")
+                    break
 
-peeking_image = Image.open(os.path.join(script_dir, 'pik2.jpg')).resize((30, 30), PIL.Image.Resampling.LANCZOS)
-peeking_icon = ImageTk.PhotoImage(peeking_image)
+        plot.close()
 
-label_presence = tk.Label(root, text="Presence: Not Detected", font=("Helvetica", 16), background='#2c3e50', foreground='white', compound=tk.LEFT, image=presence_icon)
-label_presence.pack(pady=10)
-
-label_peeking = tk.Label(root, text="Peeking: Not Detected", font=("Helvetica", 16), background='#2c3e50', foreground='white', compound=tk.LEFT, image=peeking_icon)
-label_peeking.pack(pady=10)
-
-class RadarGUI:
-    def __init__(self, root):
-        self.label_presence = label_presence
-        self.label_peeking = label_peeking
-
-    def update_labels(self, presence_status, peeking_status):
-        self.label_presence.config(text=f"Presence: {'Detected' if presence_status else 'Not Detected'}")
-        self.label_peeking.config(text=f"Peeking: {'Detected' if peeking_status else 'Not Detected'}")
-        root.update_idletasks()
-
-    def update_icons(self, presence_status, peeking_status):
-        global presence_icon, peeking_icon
-        presence_icon_path = 'pik.jpg' if presence_status else 'pik2.jpg'
-        peeking_icon_path = 'pik2.jpg' if peeking_status else 'pik.jpg'
-        
-        presence_image = Image.open(os.path.join(script_dir, presence_icon_path)).resize((30, 30), PIL.Image.Resampling.LANCZOS)
-        presence_icon = ImageTk.PhotoImage(presence_image)
-        
-        peeking_image = Image.open(os.path.join(script_dir, peeking_icon_path)).resize((30, 30), PIL.Image.Resampling.LANCZOS)
-        peeking_icon = ImageTk.PhotoImage(peeking_image)
-        
-        self.label_presence.config(image=presence_icon)
-        self.label_peeking.config(image=peeking_icon)
-        root.update_idletasks()
-
-gui = RadarGUI(root)
-
-root.mainloop()
+if __name__ == "__main__":
+    presence_map()

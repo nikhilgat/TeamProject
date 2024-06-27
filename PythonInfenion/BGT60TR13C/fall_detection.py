@@ -13,8 +13,8 @@ class FallDetectionAlgo:
 
         self.window = signal.windows.blackmanharris(num_samples_per_chirp).reshape(1, num_samples_per_chirp)
 
-        self.fall_threshold = 0.001  # This is an example threshold value
-        self.alpha = 0.6
+        self.fall_threshold = 0.00001  
+        self.alpha = 0.5
 
         self.slow_avg = None
         self.fast_avg = None
@@ -41,16 +41,16 @@ class FallDetectionAlgo:
 
 def main():
     config = FmcwSimpleSequenceConfig(
-        frame_repetition_time_s=1 / 5,
-        chirp_repetition_time_s=0.000411238,
-        num_chirps=32,
+        frame_repetition_time_s=0.5,
+        chirp_repetition_time_s=0.001,
+        num_chirps=64,
         tdm_mimo=False,
         chirp=FmcwSequenceChirp(
-            start_frequency_Hz=59_133_931_281,
-            end_frequency_Hz=62_366_068_720,
+            start_frequency_Hz=60e9,
+            end_frequency_Hz=61.5e9,
             sample_rate_Hz=1e6,
             num_samples=64,
-            rx_mask=1,
+            rx_mask=5,
             tx_mask=1,
             tx_power_level=31,
             lp_cutoff_Hz=500000,
@@ -68,7 +68,7 @@ def main():
 
         algo = FallDetectionAlgo(config.chirp.num_samples, config.num_chirps)
 
-        for frame_number in range(100):
+        for frame_number in range(1000):
             frame_contents = device.get_next_frame()
             frame = frame_contents[0]
             mat = frame[0, :, :]
