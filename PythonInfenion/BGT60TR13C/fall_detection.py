@@ -4,7 +4,7 @@ from scipy import signal
 from ifxradarsdk import get_version_full
 from ifxradarsdk.fmcw import DeviceFmcw
 from ifxradarsdk.fmcw.types import FmcwSimpleSequenceConfig, FmcwSequenceChirp
-from fft_spectrum import fft_spectrum
+from helpers.fft_spectrum import fft_spectrum
 
 class FallDetectionAlgo:
     def __init__(self, num_samples_per_chirp, num_chirps_per_frame):

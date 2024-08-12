@@ -1,4 +1,9 @@
 {
     "cmake.configureOnOpen": true,
-    "cmake.sourceDirectory": "C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/wrapper_radarsdk"
+    "cmake.sourceDirectory": "C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/wrapper_radarsdk",
+    "python.analysis.extraPaths": [
+        "./PythonInfenion/wrapper_radarsdk/src/ifxradarsdk/common",
+        "./PythonInfenion/BGT60TR13C",
+        "./PythonInfenion/BGT60TR13C/partials"
+    ]
 }
