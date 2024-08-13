@@ -1,4 +1,4 @@
-from aifc import Error
+from binascii import Error
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.image import imread

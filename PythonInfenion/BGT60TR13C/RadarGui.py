@@ -1,4 +1,4 @@
-from aifc import Error
+from binascii import Error
 import tkinter as tk
 from tkinter import messagebox
 import subprocess

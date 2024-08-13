@@ -91,13 +91,13 @@ def presence_map():
     config = FmcwSimpleSequenceConfig(
         frame_repetition_time_s=0.5,
         chirp_repetition_time_s=0.001,
-        num_chirps=256,
+        num_chirps=128,
         tdm_mimo=False,
         chirp=FmcwSequenceChirp(
             start_frequency_Hz=60e9,
             end_frequency_Hz=61.5e9,
-            sample_rate_Hz=1e6,
-            num_samples=64,
+            sample_rate_Hz=2e6,
+            num_samples=128,
             rx_mask=5,
             tx_mask=1,
             tx_power_level=31,
