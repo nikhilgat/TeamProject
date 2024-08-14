@@ -22,7 +22,6 @@ class SegmentPlot:
 
         self.set_background_image(image_path)
 
-        # Introduce margins on both sides using the margin_ratio
         total_angle_range = 2 * self.max_angle_degrees
         margin = margin_ratio * total_angle_range
         adjusted_angle_range = total_angle_range - 2 * margin
@@ -48,23 +47,19 @@ class SegmentPlot:
         self.fig.canvas.draw()
 
     def update(self, angle: float):
-        # Determine which segment the detected angle falls into
         segment_idx = np.digitize([angle], self.segments) - 1
 
-        # Update the history of detected segments
         self.angle_history.append(segment_idx)
 
-        # Compute the moving average of the detected segment indices
         avg_segment_idx = int(np.round(np.mean(self.angle_history)))
 
-        # Highlight the corresponding segment
         for idx, bar in enumerate(self.bars):
             if idx == avg_segment_idx:
-                bar.set_height(self.end_height - self.start_height)  # Set height based on start and end height
-                bar.set_y(self.start_height)  # Adjust the bottom position of the bar
+                bar.set_height(self.end_height - self.start_height) 
+                bar.set_y(self.start_height)  
                 bar.set_visible(True)
             else:
-                bar.set_height(0)  # Hide the non-detected segments
+                bar.set_height(0)  
                 bar.set_visible(False)
 
         self.fig.canvas.draw()
