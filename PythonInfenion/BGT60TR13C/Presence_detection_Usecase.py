@@ -39,10 +39,10 @@ class SegmentPlot(FigureCanvas):
 
         self.fig.tight_layout()
 
-        self.angle_history = deque(maxlen=7)
+        self.angle_history = deque(maxlen=5)
         self.is_window_open = True
         
-        self.draw()  # Initial draw
+        self.draw() 
 
     def set_background_image(self, image_path):
         img = imread(image_path)
@@ -79,7 +79,7 @@ class PresenceDetection:
         # These values should match the radar configuration
         self.num_samples = 128
         self.num_chirps = 128
-        self.num_rx_antennas = 2  # Assuming rx_mask=5 (binary 101) means 2 antennas
+        self.num_rx_antennas = 2
         
         self.doppler = DopplerAlgo(self.num_samples, self.num_chirps, self.num_rx_antennas)
         self.dbf = DigitalBeamForming(self.num_rx_antennas, num_beams=27, max_angle_degrees=max_angle_degrees)
@@ -112,7 +112,7 @@ class PresenceDetection:
         return angle_degrees
 
     def run_presence_detection(self):
-        from radar_data_acquisition import get_radar_data
+        from Radar_Data_Acquisition import get_radar_data
         radar_data = get_radar_data()
         if radar_data is None:
             print("Radar data acquisition not initialized")
@@ -138,6 +138,6 @@ def run_presence_detection():
     return presence_detection
 
 if __name__ == '__main__':
-    from radar_data_acquisition import initialize_radar
+    from Radar_Data_Acquisition import initialize_radar
     initialize_radar()
     run_presence_detection()

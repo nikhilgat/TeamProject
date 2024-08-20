@@ -5,6 +5,7 @@
         "./PythonInfenion/wrapper_radarsdk/src/ifxradarsdk/common",
         "./PythonInfenion/BGT60TR13C",
         "./PythonInfenion/BGT60TR13C/partials",
-        "./PythonInfenion/BGT60TR13C/helpers"
+        "./PythonInfenion/BGT60TR13C/helpers",
+        "./PythonInfenion/workingfiles"
     ]
 }

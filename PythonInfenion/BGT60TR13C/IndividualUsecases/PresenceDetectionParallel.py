@@ -1,3 +1,10 @@
+'''
+
+To run this usecase, place the Usecase outside the folder.
+
+'''
+
+
 from binascii import Error
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +16,6 @@ from helpers.DigitalBeamForming import DigitalBeamForming
 from helpers.DopplerAlgo import DopplerAlgo
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from collections import deque
-
 
 
 class LivePlot:
@@ -26,13 +32,12 @@ class LivePlot:
         self.is_window_open = True
         self.ax.set_xlim(-self.max_angle_degrees, self.max_angle_degrees)
         self.ax.set_ylim(0, self.max_range_m)
-        self.ax.axis('off')  # Hide axis
+        self.ax.axis('off') 
         self.fig.tight_layout()
         
-        # Load and set custom background image
         self.set_background_image(image_path)
         
-        self.history_length = 5  # Number of frames to average
+        self.history_length = 7  
         self.history = deque(maxlen=self.history_length)
 
     def set_background_image(self, image_path):
@@ -72,13 +77,13 @@ def presence_map():
     marker_path = 'C:/Users/nikhi/Documents/Projekt/TeamProject/PythonInfenion/BGT60TR13C/assets/vect.png'
     
     config = FmcwSimpleSequenceConfig(
-        frame_repetition_time_s=0.5,  # Adjusted from 0.5 to 0.15
-        chirp_repetition_time_s=0.0005,  # Adjusted from 0.001 to 0.0005
-        num_chirps=256,
-        tdm_mimo=False,  # Changed from False to True
+        frame_repetition_time_s=0.5,  
+        chirp_repetition_time_s=0.001,  
+        num_chirps=128,
+        tdm_mimo=False,  
         chirp=FmcwSequenceChirp(
             start_frequency_Hz=60e9,
-            end_frequency_Hz=61.5e9,  # Increased from 61.5e9 to 62e9
+            end_frequency_Hz=61.5e9,  
             sample_rate_Hz=1e6,
             num_samples=128,
             rx_mask=5,
@@ -111,8 +116,7 @@ def presence_map():
 
         plt.show(block=False)
         
-        # Create a deque to store the history of Range-Angle maps
-        history = deque(maxlen=7)  # Store last 5 frames
+        history = deque(maxlen=7)
 
         while not plot.is_closed():
             try:
@@ -132,25 +136,17 @@ def presence_map():
                     doppler_i = rd_beam_formed[:, :, i_beam]
                     beam_range_energy[:, i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(num_beams)
                 
-                # Adding current frame to the history
                 history.append(beam_range_energy)
-
-                # Compute moving average
                 averaged_beam_range_energy = np.mean(history, axis=0)
-
-                # Maximum energy in averaged Range-Angle map
                 max_energy = np.max(averaged_beam_range_energy)
                 
-                # Rescale map to better capture the peak
                 scale = 150
                 averaged_beam_range_energy = scale * (averaged_beam_range_energy / max_energy - 1)
                 
-                # Find dominant angle and distance of target
                 r_idx, a_idx = np.unravel_index(averaged_beam_range_energy.argmax(), averaged_beam_range_energy.shape)
                 angle_degrees = np.linspace(-max_angle_degrees, max_angle_degrees, num_beams)[a_idx]
                 distance = r_idx * max_range_m / config.chirp.num_samples
 
-                # Plot the target
                 plot.draw(angle_degrees, distance)
 
             except Error as e:
