@@ -7,14 +7,11 @@ Change the num_chirps from 128 to 64.
 
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QFrame, QMessageBox, QPushButton
-from PyQt5.QtCore import QTimer, Qt, QUrl
-from PyQt5.QtGui import QColor, QFont, QPixmap
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QFont
 import numpy as np
 from scipy import signal
 from scipy.ndimage import convolve
-from ifxradarsdk.fmcw import DeviceFmcw
-from ifxradarsdk.fmcw.types import FmcwSimpleSequenceConfig, FmcwSequenceChirp
 from helpers.fft_spectrum import fft_spectrum 
 from Radar_Data_Acquisition import initialize_radar, get_radar_data
 

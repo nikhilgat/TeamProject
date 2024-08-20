@@ -13,13 +13,13 @@ from Presence_detection_Usecase import run_presence_detection
 class RadarSignals(QObject):
     update_posture = pyqtSignal(str)
     update_fall = pyqtSignal(bool)
-    update_people_count = pyqtSignal(int)
+    update_people_count = pyqtSignal(int) 
     
 class ButtonDock(QDockWidget):
     def __init__(self, title, parent=None):
         super().__init__(title, parent)
         self.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
-        self.setMinimumSize(400, 500)  # Set initial size for the dock
+        self.setMinimumSize(800, 500)  # Set initial size for the dock
 
 class RadarGUI(QMainWindow):
     def __init__(self):
@@ -46,10 +46,14 @@ class RadarGUI(QMainWindow):
         self.fall_detection_button = QPushButton("Run Fall Detection")
         self.fall_detection_button.clicked.connect(self.run_fall_detection)
         button_layout.addWidget(self.fall_detection_button)
-
+        
         self.people_count_button = QPushButton("Run People Count")
         self.people_count_button.clicked.connect(self.run_people_count)
         button_layout.addWidget(self.people_count_button)
+
+        self.reset_fall_button = QPushButton("Reset Fall Detection")
+        self.reset_fall_button.clicked.connect(self.reset_fall_flag)
+        button_layout.addWidget(self.reset_fall_button)
 
         button_dock.setWidget(button_widget)
         self.addDockWidget(Qt.LeftDockWidgetArea, button_dock)
@@ -79,7 +83,7 @@ class RadarGUI(QMainWindow):
         # Presence detection dock
         self.presence_detection_dock = QDockWidget("Presence Detection", self)
         self.presence_detection_dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
-        self.presence_detection_dock.setMinimumSize(200, 200)
+        self.presence_detection_dock.setMinimumSize(1800, 500)
         self.presence_detection_widget = QLabel("Presence Detection: Not Running")
         self.presence_detection_widget.setAlignment(Qt.AlignCenter)
         self.presence_detection_widget.setStyleSheet("border: 1px solid black;")
@@ -90,10 +94,24 @@ class RadarGUI(QMainWindow):
         self.fall_detection_dock = QDockWidget("Fall Detection", self)
         self.fall_detection_dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
         self.fall_detection_dock.setMinimumSize(200, 200)
-        self.fall_detection_widget = QLabel("Fall Detection: Not Running")
-        self.fall_detection_widget.setAlignment(Qt.AlignCenter)
-        self.fall_detection_widget.setStyleSheet("border: 1px solid black;")
-        self.fall_detection_dock.setWidget(self.fall_detection_widget)
+
+        fall_detection_widget = QWidget()
+        fall_detection_layout = QVBoxLayout(fall_detection_widget)
+
+        self.fall_detection_label = QLabel("Fall Detection: Not Running")
+        self.fall_detection_label.setAlignment(Qt.AlignCenter)
+        self.fall_detection_label.setStyleSheet("border: 1px solid black;")
+        fall_detection_layout.addWidget(self.fall_detection_label)
+
+        self.fall_detection_led = QLabel()
+        self.fall_detection_led.setFixedSize(50, 50)
+        self.fall_detection_led.setStyleSheet("background-color: grey; border-radius: 10px;")
+        fall_detection_layout.addWidget(self.fall_detection_led, alignment=Qt.AlignCenter)
+        
+        self.fall_detected_flag = False
+        self.fall_detection_led_on = False
+
+        self.fall_detection_dock.setWidget(fall_detection_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.fall_detection_dock)
 
         # People count dock
@@ -120,7 +138,7 @@ class RadarGUI(QMainWindow):
             "sitting": "🪑",
             "sleeping": "🛌",
             "no_presence": "❌",
-            "unknown": "❓"
+            "walking": "🚶"
         }
 
         self.update_icon_size(100)
@@ -141,7 +159,13 @@ class RadarGUI(QMainWindow):
             self.radar_data.config.num_chirps
         )
 
-    def posture_detection_loop(self):
+        self.fall_detected_flag = False
+
+    def run_posture_detection(self):
+        thread = threading.Thread(target=self._posture_detection_loop)
+        thread.start()
+
+    def _posture_detection_loop(self):
         while True:
             frame = self.radar_data.get_latest_frame()
             if frame is not None:
@@ -163,21 +187,17 @@ class RadarGUI(QMainWindow):
                         elif 0.70 < distance <= 0.90:
                             posture = "sleeping"
                         else:
-                            posture = "unknown"
+                            posture = "walking"
                     else:
-                        posture = "unknown"
+                        posture = "walking"
                 else:
                     posture = "no_presence"
 
                 self.radar_signals.update_posture.emit(posture)
 
-    def run_posture_detection(self):
-        thread = threading.Thread(target=self.posture_detection_loop)
-        thread.start()
-
     def run_fall_detection(self):
-            thread = threading.Thread(target=self._fall_detection)
-            thread.start()
+        thread = threading.Thread(target=self._fall_detection)
+        thread.start()
 
     def _fall_detection(self):
         while True:
@@ -186,6 +206,28 @@ class RadarGUI(QMainWindow):
                 mat = frame[0, :, :]  # Assuming we're using the first antenna
                 fall_detected = self.fall_detection_algo.detect_fall(mat)
                 self.radar_signals.update_fall.emit(fall_detected)
+
+    def update_fall_detection_status(self, fall_detected):
+        if fall_detected:
+            self.fall_detected_flag = True
+            self.fall_detection_label.setText("Fall Detected!")
+            self.fall_detection_label.setStyleSheet("background-color: red; color: white; font-weight: bold;")
+            self.fall_detection_led.setStyleSheet("background-color: red; border-radius: 10px;")
+            self.fall_detection_led_on = True
+
+        else:
+            self.fall_detected_flag = False
+            self.fall_detection_label.setText("No Fall Detected")
+            self.fall_detection_label.setStyleSheet("background-color: green; color: white;")
+            if not self.fall_detection_led_on:
+                self.fall_detection_led.setStyleSheet("background-color: grey; border-radius: 10px;")
+
+    def reset_fall_flag(self):
+        self.fall_detected_flag = False
+        self.fall_detection_label.setText("Fall Detection: Not Running")
+        self.fall_detection_label.setStyleSheet("border: 1px solid black;")
+        self.fall_detection_led.setStyleSheet("background-color: grey; border-radius: 10px;")
+        self.fall_detection_led_on = False
 
     def run_people_count(self):
         thread = threading.Thread(target=self._people_count)
@@ -216,15 +258,7 @@ class RadarGUI(QMainWindow):
             self.presence_detection.run_presence_detection()
 
     def update_posture_detection_status(self, status):
-        self.posture_icon_label.setText(self.icons.get(status.lower(), self.icons["unknown"]))
-
-    def update_fall_detection_status(self, fall_detected):
-        if fall_detected:
-            self.fall_detection_widget.setText("Fall Detected!")
-            self.fall_detection_widget.setStyleSheet("background-color: red; color: white; font-weight: bold;")
-        else:
-            self.fall_detection_widget.setText("No Fall Detected")
-            self.fall_detection_widget.setStyleSheet("background-color: green; color: white;")
+        self.posture_icon_label.setText(self.icons.get(status.lower(), self.icons["walking"]))
 
     def update_people_count_status(self, count):
         self.people_count_widget.setText(f"People Count: {count}")

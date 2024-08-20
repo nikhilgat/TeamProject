@@ -78,11 +78,11 @@ class PresenceDetection:
         
         # These values should match the radar configuration
         self.num_samples = 128
-        self.num_chirps = 128
+        self.num_chirps = 64
         self.num_rx_antennas = 2
         
         self.doppler = DopplerAlgo(self.num_samples, self.num_chirps, self.num_rx_antennas)
-        self.dbf = DigitalBeamForming(self.num_rx_antennas, num_beams=27, max_angle_degrees=max_angle_degrees)
+        self.dbf = DigitalBeamForming(self.num_rx_antennas, num_beams=80, max_angle_degrees=max_angle_degrees)
         
         self.plot = None
         self.signals = PresenceDetectionSignals()
@@ -94,7 +94,7 @@ class PresenceDetection:
 
     def process_frame(self, frame):
         rd_spectrum = np.zeros((self.num_samples, 2 * self.num_chirps, self.num_rx_antennas), dtype=complex)
-        beam_range_energy = np.zeros((self.num_samples, 27))
+        beam_range_energy = np.zeros((self.num_samples, 80))
 
         for i_ant in range(self.num_rx_antennas):
             mat = frame[i_ant, :, :]
@@ -102,12 +102,12 @@ class PresenceDetection:
             rd_spectrum[:, :, i_ant] = dfft_dbfs
 
         rd_beam_formed = self.dbf.run(rd_spectrum)
-        for i_beam in range(27):
+        for i_beam in range(80):
             doppler_i = rd_beam_formed[:, :, i_beam]
-            beam_range_energy[:, i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(27)
+            beam_range_energy[:, i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(80)
 
         max_row, max_col = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
-        angle_degrees = np.linspace(-self.max_angle_degrees, self.max_angle_degrees, 27)[max_col]
+        angle_degrees = np.linspace(-self.max_angle_degrees, self.max_angle_degrees, 80)[max_col]
 
         return angle_degrees
 
