@@ -30,7 +30,7 @@ import numpy as np
 from scipy import signal, constants
 
 from ifxradarsdk.fmcw.types import FmcwSequenceChirp
-from fft_spectrum import *
+from helpers.fft_spectrum import *
 
 
 class DistanceAlgo:

@@ -5,7 +5,7 @@ from scipy.signal import find_peaks
 from collections import namedtuple
 from scipy import signal
 from helpers.fft_spectrum import fft_spectrum
-from Radar_Data_Acquisition import initialize_radar, get_radar_data
+from radar_data_acquisition import initialize_radar, get_radar_data
 
 class PostureDetectionAlgo:
     def __init__(self, num_samples_per_chirp, num_chirps_per_frame):
@@ -26,7 +26,7 @@ class PostureDetectionAlgo:
 
         self.window = signal.windows.blackmanharris(num_samples_per_chirp).reshape(1, num_samples_per_chirp)
 
-    def presence(self, mat):
+    def posture(self, mat):
         alpha_slow = self.alpha_slow
         alpha_med = self.alpha_med
         alpha_fast = self.alpha_fast
@@ -102,7 +102,7 @@ class RadarGUI:
 
                         for i_ant in range(frame.shape[0]):
                             mat = frame[i_ant, :, :]
-                            state = algo.presence(mat)
+                            state = algo.posture(mat)
 
                             if state.presence:
                                 movement_detected = True

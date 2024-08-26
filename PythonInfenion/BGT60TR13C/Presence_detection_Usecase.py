@@ -112,7 +112,7 @@ class PresenceDetection:
         return angle_degrees
 
     def run_presence_detection(self):
-        from Radar_Data_Acquisition import get_radar_data
+        from radar_data_acquisition import get_radar_data
         radar_data = get_radar_data()
         if radar_data is None:
             print("Radar data acquisition not initialized")
@@ -138,6 +138,6 @@ def run_presence_detection():
     return presence_detection
 
 if __name__ == '__main__':
-    from Radar_Data_Acquisition import initialize_radar
+    from radar_data_acquisition import initialize_radar
     initialize_radar()
     run_presence_detection()

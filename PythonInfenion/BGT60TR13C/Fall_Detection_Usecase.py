@@ -9,7 +9,7 @@ from scipy.ndimage import convolve
 from ifxradarsdk.fmcw import DeviceFmcw
 from ifxradarsdk.fmcw.types import FmcwSimpleSequenceConfig, FmcwSequenceChirp
 from helpers.fft_spectrum import fft_spectrum 
-from Radar_Data_Acquisition import initialize_radar, get_radar_data
+from radar_data_acquisition import initialize_radar, get_radar_data
 
 
 class FallDetectionAlgo:

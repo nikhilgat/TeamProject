@@ -3,7 +3,7 @@ from scipy.signal import find_peaks
 from collections import namedtuple
 from scipy import signal
 from helpers.fft_spectrum import fft_spectrum
-from Radar_Data_Acquisition import initialize_radar, get_radar_data
+from radar_data_acquisition import initialize_radar, get_radar_data
 
 class PresenceAlgo:
     def __init__(self, num_samples_per_chirp, num_chirps_per_frame):

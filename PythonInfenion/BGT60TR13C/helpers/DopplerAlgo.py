@@ -68,7 +68,7 @@ class DopplerAlgo:
         """
         # Step 1 - Remove average from signal (mean removal)
         data = data - np.average(data)
-
+ 
         # Step 2 - MTI processing to remove static objects
         data_mti = data - self.mti_history[:, :, i_ant]
         self.mti_history[:, :, i_ant] = data * self.mti_alpha + self.mti_history[:, :, i_ant] * (1 - self.mti_alpha)

@@ -45,6 +45,7 @@ radar_data = None
 
 def initialize_radar():
     global radar_data
+    # #Presence_Detection_Usecase and People_Detection_Usecase 
     config = FmcwSimpleSequenceConfig(
         frame_repetition_time_s=0.5,
         chirp_repetition_time_s=0.001,
@@ -63,6 +64,66 @@ def initialize_radar():
             if_gain_dB=33,
         )
     )
+    
+    # #Posture_Detection_Usecase
+    # config = FmcwSimpleSequenceConfig(
+    #     frame_repetition_time_s=0.5,
+    #     chirp_repetition_time_s=0.001,
+    #     num_chirps=64,
+    #     tdm_mimo=False,
+    #     chirp=FmcwSequenceChirp(
+    #         start_frequency_Hz=60e9,
+    #         end_frequency_Hz=61.5e9,
+    #         sample_rate_Hz=2e6,
+    #         num_samples=128,
+    #         rx_mask=7,
+    #         tx_mask=1,
+    #         tx_power_level=31,
+    #         lp_cutoff_Hz=500000,
+    #         hp_cutoff_Hz=80000,
+    #         if_gain_dB=33,
+    #     )
+    # )
+    
+    # #Fall_Detection_Usecase
+    # config = FmcwSimpleSequenceConfig(
+    #     frame_repetition_time_s=0.5,
+    #     chirp_repetition_time_s=283e-6,
+    #     num_chirps=64,
+    #     tdm_mimo=False,
+    #     chirp=FmcwSequenceChirp(
+    #         start_frequency_Hz=60e9,
+    #         end_frequency_Hz=63.5e9,
+    #         sample_rate_Hz=1e6,
+    #         num_samples=128,
+    #         rx_mask=5,
+    #         tx_mask=1,
+    #         tx_power_level=31,
+    #         lp_cutoff_Hz=500000,
+    #         hp_cutoff_Hz=80000,
+    #         if_gain_dB=45,
+    #     )
+    # )
+    
+    # #Gesture_Detection_Usecase
+    # config = FmcwSimpleSequenceConfig(
+    #     frame_repetition_time_s=0.5,
+    #     chirp_repetition_time_s=283e-6,
+    #     num_chirps=64,
+    #     tdm_mimo=False,
+    #     chirp=FmcwSequenceChirp(
+    #         start_frequency_Hz=60e9,
+    #         end_frequency_Hz=61.5e9,
+    #         sample_rate_Hz=1e6,
+    #         num_samples=128,
+    #         rx_mask=5,
+    #         tx_mask=1,
+    #         tx_power_level=31,
+    #         lp_cutoff_Hz=500000,
+    #         hp_cutoff_Hz=80000,
+    #         if_gain_dB=33,
+    #     )
+    # )
     radar_data = RadarDataAcquisition(config)
     radar_data.start()
 
