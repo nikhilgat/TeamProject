@@ -39,7 +39,7 @@ class SegmentPlot(FigureCanvas):
 
         self.fig.tight_layout()
 
-        self.angle_history = deque(maxlen=5)
+        self.angle_history = deque(maxlen=7)
         self.is_window_open = True
         
         self.draw() 

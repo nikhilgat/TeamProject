@@ -9,7 +9,6 @@ from radar_data_acquisition import initialize_radar, get_radar_data
 import threading
 from Fall_Detection_Usecase import FallDetectionAlgo
 from People_Count_Usecase import PresenceAlgo
-from Presence_detection_Usecase import run_presence_detection
 from Posture_Detection_Usecase import PostureDetectionAlgo
 
 class RadarSignals(QObject):
@@ -19,32 +18,32 @@ class RadarSignals(QObject):
     update_posture = pyqtSignal(str)
     
 class GestureDetectionAlgo:
-    def __init__(self, num_samples, num_chirps, chirp_repetition_time_s, start_frequency_Hz):
+    def __init__(self, num_samples, num_chirps, num_rx_antennas):
         self.num_samples = num_samples
         self.num_chirps = num_chirps
-        self.chirp_repetition_time_s = chirp_repetition_time_s
-        self.start_frequency_Hz = start_frequency_Hz
+        self.num_rx_antennas = num_rx_antennas
+        self.doppler = DopplerAlgo(num_samples, num_chirps, num_rx_antennas)
 
-    def detect_gesture(self, radar_data):
-        frame = radar_data.get_latest_frame()
-        if frame is None:
-            return "No Gesture Detected"
-        
-        gesture = self.analyze_frame(frame)
-        return gesture
+    def detect_gesture(self, frame_data):
+        detection_occurred = False
+        for i_ant in range(self.num_rx_antennas):
+            if i_ant < frame_data.shape[0]:
+                mat = frame_data[i_ant, :, :]
+                try:
+                    dfft_dbfs = linear_to_dB(self.doppler.compute_doppler_map(mat, i_ant))
+                    if np.any(dfft_dbfs > -59):
+                        detection_occurred = True
+                        break
+                except IndexError as e:
+                    print(f"IndexError in compute_doppler_map: {e}")
+                    print(f"Shape of mat: {mat.shape}")
+                    print(f"i_ant: {i_ant}")
+                    continue
 
-    def analyze_frame(self, frame):
-        frame = np.array(frame)
-        frame_sum = np.sum(frame)
-        
-        if frame_sum > 10000:
-            return "Wave"
-        elif frame_sum > 5000:
-            return "Swipe"
-        elif frame_sum > 2000:
-            return "Circle"
+        if detection_occurred:
+            return "Gesture detected"
         else:
-            return "No Gesture Detected"
+            return "No gesture detected"
 
 def linear_to_dB(x):
     return 20 * np.log10(abs(x))
@@ -177,15 +176,26 @@ class RadarGUI(QMainWindow):
         self.fall_detection_dock.setWidget(fall_detection_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.fall_detection_dock)
         
-        # Gesture detection dock
+# Gesture detection dock
         self.gesture_detection_dock = QDockWidget("Gesture Detection", self)
         self.gesture_detection_dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
         self.gesture_detection_dock.setMinimumSize(200, 200)
         self.gesture_detection_dock.setStyleSheet("QDockWidget { font-size: 28px; color: white; }")
-        self.gesture_widget = QLabel("Gesture Detection: Not Running")
-        self.gesture_widget.setAlignment(Qt.AlignCenter)
-        self.gesture_widget.setStyleSheet("border: 1px solid white; font-size: 28px; color: white;")
-        self.gesture_detection_dock.setWidget(self.gesture_widget)
+
+        gesture_detection_widget = QWidget()
+        gesture_detection_layout = QVBoxLayout(gesture_detection_widget)
+
+        self.gesture_detection_label = QLabel("Gesture: Not Detected")
+        self.gesture_detection_label.setAlignment(Qt.AlignCenter)
+        self.gesture_detection_label.setStyleSheet("border: 1px solid white; font-size: 28px; color: white;")
+        gesture_detection_layout.addWidget(self.gesture_detection_label)
+
+        self.gesture_icon_label = QLabel()
+        self.gesture_icon_label.setFixedSize(50, 50)
+        self.gesture_icon_label.setStyleSheet("background-color: grey; border-radius: 25px;")
+        gesture_detection_layout.addWidget(self.gesture_icon_label, alignment=Qt.AlignCenter)
+
+        self.gesture_detection_dock.setWidget(gesture_detection_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.gesture_detection_dock)
 
         # People count dock
@@ -193,10 +203,21 @@ class RadarGUI(QMainWindow):
         self.people_count_dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
         self.people_count_dock.setMinimumSize(200, 200)
         self.people_count_dock.setStyleSheet("QDockWidget { font-size: 28px; color: white; }")
-        self.people_count_widget = QLabel("People Count: Not Running")
-        self.people_count_widget.setAlignment(Qt.AlignCenter)
-        self.people_count_widget.setStyleSheet("border: 1px solid white; font-size: 28px; color: white;")
-        self.people_count_dock.setWidget(self.people_count_widget)
+
+        people_count_widget = QWidget()
+        people_count_layout = QVBoxLayout(people_count_widget)
+
+        self.people_count_label = QLabel("People Count: 0")
+        self.people_count_label.setAlignment(Qt.AlignCenter)
+        self.people_count_label.setStyleSheet("border: 1px solid white; font-size: 28px; color: white;")
+        people_count_layout.addWidget(self.people_count_label)
+
+        self.people_count_icon_label = QLabel("👤")
+        self.people_count_icon_label.setAlignment(Qt.AlignCenter)
+        self.people_count_icon_label.setStyleSheet("font-size: 40px;")
+        people_count_layout.addWidget(self.people_count_icon_label)
+
+        self.people_count_dock.setWidget(people_count_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.people_count_dock)
         
         initialize_radar()
@@ -217,7 +238,6 @@ class RadarGUI(QMainWindow):
             "unknown": "❓",
             "fall_detected": "🆘",
             "no_fall": "✅",
-            "gesture": "🤖"
         }
 
         self.update_icon_size(100)
@@ -237,11 +257,11 @@ class RadarGUI(QMainWindow):
             self.radar_data.config.chirp.num_samples,
             self.radar_data.config.num_chirps
         )
+        num_rx_antennas = bin(self.radar_data.config.chirp.rx_mask).count('1')
         self.gesture_algo = GestureDetectionAlgo(
             self.radar_data.config.chirp.num_samples,
             self.radar_data.config.num_chirps,
-            self.radar_data.config.chirp_repetition_time_s,
-            self.radar_data.config.chirp.start_frequency_Hz
+            num_rx_antennas
         )
 
         self.fall_detected_flag = False
@@ -292,7 +312,7 @@ class RadarGUI(QMainWindow):
         while True:
             frame = self.radar_data.get_latest_frame()
             if frame is not None:
-                mat = frame[0, :, :]  # Assuming we're using the first antenna
+                mat = frame[0, :, :]  
                 fall_detected = self.fall_detection_algo.detect_fall(mat)
                 self.radar_signals.update_fall.emit(fall_detected)
 
@@ -350,7 +370,8 @@ class RadarGUI(QMainWindow):
         self.posture_icon_label.setText(self.icons.get(status.lower(), self.icons["unknown"]))
 
     def update_people_count_status(self, count):
-        self.people_count_widget.setText(f"People Count: {count}")
+        self.people_count_label.setText(f"People Count: {count}")
+        self.people_count_icon_label.setText("👤" * min(count, 3))
 
     def update_icon_size(self, size):
         font = QFont()
@@ -364,51 +385,36 @@ class RadarGUI(QMainWindow):
     def _gesture_detection_loop(self):
         last_detection_time = 0
         detection_suppress_time = 1
-        gesture_display_time = 5
-        num_rx_antennas = bin(self.radar_data.config.chirp.rx_mask).count('1')
-        last_gesture = "No Gesture Detected"
-        gesture_start_time = 0
+        display_duration = 5
+        gesture_detected = False
 
         while True:
             frame_data = self.radar_data.get_latest_frame()
             if frame_data is not None:
-                detection_occurred = False
-                for i_ant in range(num_rx_antennas):
-                    if i_ant < frame_data.shape[0]:
-                        mat = frame_data[i_ant, :, :]
-                        try:
-                            dfft_dbfs = linear_to_dB(self.doppler.compute_doppler_map(mat, i_ant))
-                            if np.any(dfft_dbfs > -64):
-                                detection_occurred = True
-                                break
-                        except IndexError as e:
-                            print(f"IndexError in compute_doppler_map: {e}")
-                            print(f"Shape of mat: {mat.shape}")
-                            print(f"i_ant: {i_ant}")
-                            continue
-
-                gesture = self.gesture_algo.detect_gesture(self.radar_data)
+                gesture = self.gesture_algo.detect_gesture(frame_data)
                 
                 current_time = time.time()
 
-                if detection_occurred:
+                if gesture == "Gesture detected":
                     if current_time - last_detection_time > detection_suppress_time:
-                        self.radar_signals.update_gesture.emit("Assistance Required")
+                        print("Gesture detected")
+                        self.radar_signals.update_gesture.emit("Gesture detected")
                         last_detection_time = current_time
-                
-                if gesture != "No Gesture Detected" and gesture != last_gesture:
-                    self.radar_signals.update_gesture.emit(gesture)
-                    last_gesture = gesture
-                    gesture_start_time = current_time
-                elif current_time - gesture_start_time > gesture_display_time:
-                    if last_gesture != "No Gesture Detected":
-                        self.radar_signals.update_gesture.emit("No Gesture Detected")
-                        last_gesture = "No Gesture Detected"
-            
+                        gesture_detected = True
+
+                if gesture_detected and current_time - last_detection_time > display_duration:
+                    print("No gesture detected")
+                    self.radar_signals.update_gesture.emit("No gesture detected")
+                    gesture_detected = False
+
             time.sleep(0.01)
 
     def update_gesture_detection_status(self, gesture):
-        self.gesture_widget.setText(f"Detected Gesture: {gesture}")
+        self.gesture_detection_label.setText(f"Gesture: {gesture}")
+        if gesture != "No Gesture Detected":
+            self.gesture_icon_label.setStyleSheet("background-color: green; border-radius: 25px;")
+        else:
+            self.gesture_icon_label.setStyleSheet("background-color: yellow; border-radius: 25px;")
 
     def closeEvent(self, event):
         if self.radar_data:
