@@ -3,6 +3,7 @@ from scipy.signal import find_peaks
 from collections import namedtuple
 from scipy import signal
 from helpers.fft_spectrum import fft_spectrum
+from sklearn.cluster import DBSCAN
 from radar_data_acquisition import initialize_radar, get_radar_data
 
 class PresenceAlgo:
@@ -72,12 +73,23 @@ class PresenceAlgo:
             aoa_estimates.append(np.degrees(theta))
 
         return aoa_estimates
+    
+    def cluster_peaks(self, peaks, aoa_estimates):
+        features = np.column_stack((peaks, aoa_estimates))
+
+        epsilon = 0.2 
+        min_samples = 7
+        db = DBSCAN(eps=epsilon, min_samples=min_samples).fit(features)
+
+        labels = db.labels_
+
+        return labels
 
 def run_presence_detection(radar_data):
     config = radar_data.config
     algo = PresenceAlgo(config.chirp.num_samples, config.num_chirps)
 
-    antenna_distance = 0.0025  # in meters
+    antenna_distance = 0.0025
     wavelength = 3e8 / ((config.chirp.start_frequency_Hz + config.chirp.end_frequency_Hz) / 2)
 
     while True:
@@ -89,11 +101,12 @@ def run_presence_detection(radar_data):
                 total_num_persons = 0
 
                 aoa_estimates_all = []
+                peaks_all = []
 
                 for i in range(num_rx_antennas):
                     frame = frame_contents[i]
 
-                    mat = frame[:, :]
+                    mat = frame[0, :, :]
 
                     state = algo.presence(mat)
 
@@ -105,6 +118,13 @@ def run_presence_detection(radar_data):
                     if state.num_persons > 0:
                         aoa_estimates = algo.estimate_aoa(frame_contents, state.peaks, antenna_distance, wavelength)
                         aoa_estimates_all.extend(aoa_estimates)
+                        peaks_all.extend(state.peaks)
+                    
+                    if len(peaks_all) > 0 and len(aoa_estimates_all) > 0:
+                       cluster_labels = algo.cluster_peaks(peaks_all, aoa_estimates_all)
+                       num_clusters = len(set(cluster_labels)) - (1 if -1 in cluster_labels else 0)
+                    else:
+                       num_clusters = 0
 
                 print(f"Presence: {presence_detected}")
                 print(f"Number of persons: {total_num_persons}")
@@ -116,7 +136,7 @@ def run_presence_detection(radar_data):
             print(f"Error occurred: {e}")
             break
 
-if __name__ == "__main__":
+if __name__ == "main":
 
     radar_data = None
     try:

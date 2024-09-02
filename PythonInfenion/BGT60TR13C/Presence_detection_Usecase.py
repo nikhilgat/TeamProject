@@ -5,7 +5,6 @@ from matplotlib.image import imread
 from helpers.DigitalBeamForming import DigitalBeamForming
 from helpers.DopplerAlgo import DopplerAlgo
 import time
-import queue
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -106,8 +105,8 @@ class PresenceDetection:
             doppler_i = rd_beam_formed[:, :, i_beam]
             beam_range_energy[:, i_beam] += np.linalg.norm(doppler_i, axis=1) / np.sqrt(80)
 
-        max_row, max_col = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
-        angle_degrees = np.linspace(-self.max_angle_degrees, self.max_angle_degrees, 80)[max_col]
+        max_idx = np.unravel_index(beam_range_energy.argmax(), beam_range_energy.shape)
+        angle_degrees = np.linspace(-self.max_angle_degrees, self.max_angle_degrees, 80)[max_idx[1]]
 
         return angle_degrees
 

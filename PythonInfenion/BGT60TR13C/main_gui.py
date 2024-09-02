@@ -10,6 +10,7 @@ import threading
 from Fall_Detection_Usecase import FallDetectionAlgo
 from People_Count_Usecase import PresenceAlgo
 from Posture_Detection_Usecase import PostureDetectionAlgo
+from Presence_Detection_Usecase import run_presence_detection
 
 class RadarSignals(QObject):
     update_fall = pyqtSignal(bool)
@@ -242,7 +243,7 @@ class RadarGUI(QMainWindow):
 
         self.update_icon_size(100)
 
-        # Initialize algorithms
+        # Initializing algorithms
         self.posture_algo = PostureDetectionAlgo(
             self.radar_data.config.chirp.num_samples,
             self.radar_data.config.num_chirps
@@ -266,7 +267,7 @@ class RadarGUI(QMainWindow):
 
         self.fall_detected_flag = False
         
-        # Initialize DopplerAlgo
+        # Initializing DopplerAlgo
         num_rx_antennas = bin(self.radar_data.config.chirp.rx_mask).count('1')
         self.doppler = DopplerAlgo(self.radar_data.config.chirp.num_samples, 
                                    self.radar_data.config.num_chirps, 
@@ -280,7 +281,7 @@ class RadarGUI(QMainWindow):
         while True:
             frame = self.radar_data.get_latest_frame()
             if frame is not None:
-                mat = frame[0, :, :]  # Assuming we're using the first antenna
+                mat = frame[0, :, :]
                 state = self.posture_algo.posture(mat)
                 
                 if state.presence:
@@ -352,7 +353,6 @@ class RadarGUI(QMainWindow):
 
     def run_presence_detection(self):
         if self.presence_detection is None:
-            from Presence_detection_Usecase import run_presence_detection
             self.presence_detection = run_presence_detection()
             plot = self.presence_detection.initialize_plot()
             self.presence_detection_widget = plot
@@ -371,7 +371,7 @@ class RadarGUI(QMainWindow):
 
     def update_people_count_status(self, count):
         self.people_count_label.setText(f"People Count: {count}")
-        self.people_count_icon_label.setText("👤" * min(count, 3))
+        self.people_count_icon_label.setText("👤" * count)
 
     def update_icon_size(self, size):
         font = QFont()

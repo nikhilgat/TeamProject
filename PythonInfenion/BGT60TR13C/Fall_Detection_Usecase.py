@@ -65,17 +65,13 @@ class FallDetectionApp(QMainWindow):
         self.frame_timer = QTimer(self)
         self.frame_timer.timeout.connect(self.update_frame)
         self.setup_radar()
-
-
-        # Fall detection flag
         self.fall_detected_flag = False
 
     def initUI(self):
         self.setWindowTitle('Fall Detection System')
-        self.setGeometry(100, 100, 800, 600)  # Adjusted size for a better layout
-        self.setStyleSheet("background-color: #f0f0f0;")  # Set initial background color
+        self.setGeometry(100, 100, 800, 600) 
+        self.setStyleSheet("background-color: #f0f0f0;")
 
-        # Font settings
         font = QFont()
         font.setPointSize(14)
 
@@ -83,20 +79,14 @@ class FallDetectionApp(QMainWindow):
         self.label.setAlignment(Qt.AlignCenter)
         self.label.setFont(font)
         self.label.setStyleSheet("color: #333;")
-
-        # Create a frame to contain the label and image
         self.frame = QFrame(self)
         self.frame.setFrameShape(QFrame.Box)
         self.frame.setFrameShadow(QFrame.Raised)
         self.frame.setLineWidth(2)
         self.frame.setStyleSheet("QFrame { background-color: white; border: 2px solid #0078D7; border-radius: 10px; }")
-
-        # Red light indicator
         self.red_light = QLabel(self)
-        self.red_light.setFixedSize(60, 60)  # Larger size for better visibility
-        self.red_light.setStyleSheet("background-color: grey; border-radius: 30px;")  # Initially off
-
-        # Reset button
+        self.red_light.setFixedSize(60, 60)  
+        self.red_light.setStyleSheet("background-color: grey; border-radius: 30px;") 
         self.reset_button = QPushButton('Reset Fall Detection', self)
         self.reset_button.setFont(font)
         self.reset_button.setStyleSheet("background-color: #0078D7; color: white; border-radius: 5px; padding: 10px;")

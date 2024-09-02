@@ -144,7 +144,7 @@ if __name__ == "__main__":
     plt.ion()
     frame_count = 0
     try:
-        while True:  # Run indefinitely
+        while True:
             start_time = time.time()
             targets = radar.process_frame()
             if targets is not None and len(targets) > 0:

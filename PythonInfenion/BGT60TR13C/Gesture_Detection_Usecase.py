@@ -28,20 +28,6 @@ class GestureDetectionAlgo:
         gesture = self.analyze_frame(frame)
         return gesture
 
-    def analyze_frame(self, frame):
-
-        frame = np.array(frame)
-        frame_sum = np.sum(frame)
-        
-        if frame_sum > 10000:
-            return "Wave"
-        elif frame_sum > 5000:
-            return "Swipe"
-        elif frame_sum > 2000:
-            return "Circle"
-        else:
-            return "No Gesture Detected"
-
 if __name__ == '__main__':
     args = parse_program_arguments(
         '''Processes radar data and outputs detections to terminal''',

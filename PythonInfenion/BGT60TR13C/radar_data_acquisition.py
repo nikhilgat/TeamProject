@@ -45,7 +45,7 @@ radar_data = None
 
 def initialize_radar():
     global radar_data
-    # #Presence_Detection_Usecase and People_Detection_Usecase 
+    #Presence_Detection_Usecase and People_Detection_Usecase 
     config = FmcwSimpleSequenceConfig(
         frame_repetition_time_s=0.5,
         chirp_repetition_time_s=0.001,
