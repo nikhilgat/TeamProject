@@ -19,7 +19,7 @@
 
 ### Steps to display data from the sensor
 - The **main_gui.py** with the help of the libraries is developed to show all the usecases in a single GUI.
-- The paths to the assets is a local link and has to be replaced by the user.
+- All the paths to the assets are local links and has to be replaced by the user.
 - Start by connecting the Sensor to the pc.
 - Then run the **main_gui.py**.
 - The Fall Detection usecase requires a different sensor configuration and has to be set in the **radar_data_acquisition.py**
