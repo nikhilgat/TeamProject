@@ -18,7 +18,7 @@
 		 python  -m  pip  install  /path/to/ifxradarsdk.whl
 
 ### Steps to display data from the sensor
-- The **RadarGui.py** with the help of the libraries is developed to implement **Presence Sensing**, **Range Angle Map** and other functionalities the sensor supports.
+- The **main_gui.py** with the help of the libraries is developed to show all the usecases in a single GUI.
 - Start by connecting the Sensor to the pc.
-- Then run the **RadarGui.py**.
-- The sensor currently does not support Multi-Threading nor Concurrent.Futures.
+- Then run the **main_gui.py**.
+- The Fall Detection usecase requires a different sensor configuration and has to be set in the **radar_data_acquisition.py**
